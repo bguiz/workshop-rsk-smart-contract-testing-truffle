@@ -1,0 +1,33 @@
+{
+  "name": "workshop-rsk-smart-contract-testing-truffle",
+  "version": "0.0.0",
+  "description": "RSK Workshop for Smart Contract Testing using Truffle",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test --network regtest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bguiz/workshop-rsk-smart-contract-testing-truffle.git"
+  },
+  "keywords": [
+    "rsk",
+    "testing",
+    "workshop",
+    "truffle"
+  ],
+  "author": "bguiz",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/bguiz/workshop-rsk-smart-contract-testing-truffle/issues"
+  },
+  "homepage": "https://github.com/bguiz/workshop-rsk-smart-contract-testing-truffle#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@truffle/hdwallet-provider": "1.0.35",
+    "mnemonics": "1.1.3"
+  }
+}
