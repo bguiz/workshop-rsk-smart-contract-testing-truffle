@@ -79,10 +79,10 @@ contract Cars {
     {
         require(cars[otherCarId].owner != address(0x00),
           "other car must exist");
-        uint256 timeOfDay = (getTime() % 86400);
-        require(timeOfDay >= 21600,
-            "cannot honk between midnight and 6am"
-        );
+        // uint256 timeOfDay = (getTime() % 86400);
+        // require(timeOfDay >= 21600,
+        //     "cannot honk between midnight and 6am"
+        // );
         emit CarHonk(carId, otherCarId);
     }
 
