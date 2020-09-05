@@ -95,5 +95,5 @@ module.exports = {
       version: '0.5.7',
     }
   },
-  contracts_build_directory: path.join(__dirname, 'contracts'),
+  contracts_build_directory: path.join(__dirname, 'build/contracts'),
 }
