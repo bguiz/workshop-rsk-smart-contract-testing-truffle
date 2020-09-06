@@ -1,6 +1,8 @@
 import Web3 from 'web3';
 import electionArtefact from '../build/contracts/Election.json';
 
+import utils from './utils.js';
+
 document.addEventListener('DOMContentLoaded', onDocumentLoad);
 
 function onDocumentLoad() {
@@ -74,5 +76,57 @@ const App = {
     return App.render();
   },
 
-  render: function() {}
+  render: async function() {
+    let electionInstance;
+    let loader = document.querySelector('#loader');
+    let content = document.querySelector('#content');
+
+    utils.elShow(loader);
+    utils.elHide(content);
+
+    // Load account data
+    document.querySelector('#account').textContent =
+      `Your account ${ App.accounts[0] }`;
+
+    // Load contract data
+    electionInstance = App.contracts.Election;
+    const candidatesCount = await electionInstance.methods.candidatesCount().call();
+    const getCandidatePromises = [];
+    for (let idx = 1; idx <= candidatesCount; ++idx) {
+      getCandidatePromises.push(
+        electionInstance.methods.candidates(idx).call(),
+      );
+    }
+    const candidates = (await Promise.all(getCandidatePromises))
+      .map(
+        ({ id, name, voteCount }) => ({ id, name, voteCount }),
+      );
+    console.log(candidates);
+
+    // Render live results
+    let candidateResultsHtml = '';
+    let candidateSelectHtml = '';
+    candidates.forEach((candidate) => {
+      const { id, name, voteCount } = candidate;
+      candidateResultsHtml +=
+        `<tr><td>${id}</td><td>${name}</td><td>${voteCount}</td></tr>`;
+      candidateSelectHtml +=
+        `<option value="${id}">${name}</option>`;
+    });
+    const candidatesSelectEl =
+      document.querySelector('#candidatesSelect');
+    candidatesSelectEl.innerHTML = candidateSelectHtml;
+    const candidateResultsEl =
+      document.querySelector('#candidatesResults');
+    candidateResultsEl.innerHTML = candidateResultsHtml;
+
+    // Determine whether to display ballot to this account
+    const currentAccountHasVoted =
+      await electionInstance.methods.voters(App.accounts[0]).call();
+    console.log('currentAccountHasVoted', currentAccountHasVoted);
+    if (currentAccountHasVoted) {
+      const ballotEl = document.querySelector('#ballot');
+      utils.hideEl(ballotEl);
+    }
+  }
 };
