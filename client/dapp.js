@@ -26,11 +26,19 @@ const App = {
       // Ref: https://eips.ethereum.org/EIPS/eip-1193
       try {
         // Request account access if needed
-        const accounts = await ethereum.request({
+        const accounts = await window.ethereum.request({
           method: 'eth_requestAccounts',
         });
         // Accounts now exposed, use them
-        this.updateAccounts(accounts);
+        App.updateAccounts(accounts);
+
+        // Opt out of refresh page on network change
+        // Ref: https://docs.metamask.io/guide/ethereum-provider.html#properties
+        ethereum.autoRefreshOnNetworkChange = false;
+
+        // When user changes to another account,
+        // trigger necessary updates within DApp
+        window.ethereum.on('accountsChanged', App.updateAccounts);
       } catch (error) {
         // User denied account access
         console.error('User denied web3 access');
@@ -52,8 +60,12 @@ const App = {
   },
 
   updateAccounts: async function(accounts) {
+    const firstUpdate = !(App.accounts && App.accounts[0]);
     App.accounts = accounts || await App.web3.eth.getAccounts();
     console.log('updateAccounts', accounts[0]);
+    if (!firstUpdate) {
+      App.render();
+    }
   },
 
   initContract: async function() {
@@ -77,19 +89,26 @@ const App = {
   },
 
   render: async function() {
-    let electionInstance;
-    let loader = document.querySelector('#loader');
-    let content = document.querySelector('#content');
-
+    const loader = document.querySelector('#loader');
+    const content = document.querySelector('#content');
     utils.elShow(loader);
     utils.elHide(content);
+
+    const voteEl = document.querySelector('#vote');
+    voteEl.removeEventListener('click', App.onVoteSubmitClick);
+    voteEl.addEventListener('click', App.onVoteSubmitClick);
 
     // Load account data
     document.querySelector('#account').textContent =
       `Your account ${ App.accounts[0] }`;
 
+    return App.renderVotes();
+  },
+
+  renderVotes: async function() {
+    const electionInstance = App.contracts.Election;
+
     // Load contract data
-    electionInstance = App.contracts.Election;
     const candidatesCount = await electionInstance.methods.candidatesCount().call();
     const getCandidatePromises = [];
     for (let idx = 1; idx <= candidatesCount; ++idx) {
@@ -104,6 +123,8 @@ const App = {
     console.log(candidates);
 
     // Render live results
+    utils.elHide(loader);
+    utils.elShow(content);
     let candidateResultsHtml = '';
     let candidateSelectHtml = '';
     candidates.forEach((candidate) => {
@@ -122,11 +143,34 @@ const App = {
 
     // Determine whether to display ballot to this account
     const currentAccountHasVoted =
-      await electionInstance.methods.voters(App.accounts[0]).call();
+      await electionInstance.methods
+        .voters(App.accounts[0]).call();
     console.log('currentAccountHasVoted', currentAccountHasVoted);
+    const ballotEl = document.querySelector('#ballot');
     if (currentAccountHasVoted) {
-      const ballotEl = document.querySelector('#ballot');
-      utils.hideEl(ballotEl);
+      utils.elHide(ballotEl);
+    } else {
+      utils.elShow(ballotEl);
     }
-  }
+  },
+
+  onVoteSubmitClick: async function(ev) {
+    ev.preventDefault();
+
+    const electionInstance = App.contracts.Election;
+    const candidateId =
+      document.querySelector('#candidatesSelect').value;
+    try {
+      const loader = document.querySelector('#loader');
+      const content = document.querySelector('#content');
+      utils.elShow(loader);
+      utils.elHide(content);
+      await electionInstance.methods
+        .vote(candidateId).send({ from: App.accounts[0] });
+    } catch (ex) {
+      console.error(ex);
+    }
+
+    return App.renderVotes();
+  },
 };
