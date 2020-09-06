@@ -15,6 +15,10 @@ const webpackConfig = {
     new CopyWebpackPlugin({
       patterns: [
         {
+          from: './client/dapp.css',
+          to: 'dapp.css',
+        },
+        {
           from: './client/index.html',
           to: 'index.html',
         },
